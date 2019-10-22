@@ -35,3 +35,22 @@ class TestTreeModel(TestCase):
 
     def test_get_nonexisting_subtree(self):
         self.assertRaises(Tree.DoesNotExist, Tree.objects.get_subtree_dict, 8)
+
+
+    def test_get_tree(self):
+        subtree = Tree.objects.get_tree_dict()
+        self.assertListEqual(
+            subtree,
+            [
+                {'id': 1, 'name': 'Корень', 'children':
+                    [
+                        {'id': 2, 'name': 'Ветвь 1', 'children':
+                            [
+                                {'id': 4, 'name': 'Подветвь 1', 'children': []}
+                            ]
+                        },
+                        {'id': 3, 'name': 'Ветвь 2', 'children': []}
+                    ]
+                }
+            ]
+        )

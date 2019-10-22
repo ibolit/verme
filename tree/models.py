@@ -15,6 +15,10 @@ class TreeManager(models.Manager):
         )
         return subtree
 
+    def get_tree_dict(self):
+        roots = self.get_queryset().filter(parent__isnull=True)
+        return [self.get_subtree_dict(root.pk) for root in roots]
+
 
 class Tree(models.Model):
     parent = models.ForeignKey(
