@@ -1,23 +1,31 @@
 from django.db import models
+from django.db.models import Count
 
 
 class TreeManager(models.Manager):
-    def get_subtree_dict(self, root):
-        queryset = self.get_queryset().filter(pk=root)
-        queryset.prefetch_related('tree_set')
-        if not queryset:
-            raise Tree.DoesNotExist(root)
-        node = queryset[0]
-        subtree = dict(
-            id=root,
-            name=node.name,
-            children=[self.get_subtree_dict(child.pk) for child in node.tree_set.all()]
+    def _format_node(self, tree_node, children_dicts):
+        return dict(
+            id=tree_node.pk,
+            name=tree_node.name,
+            children=children_dicts
         )
-        return subtree
+
+    def _get_children(self, pk):
+        children = self.get_queryset().filter(parent=pk).annotate(num_children=Count('tree'))
+
+        children_list = []
+        for child in children:
+
+            grandchildren = [] if not child.num_children else self._get_children(child.pk)
+            children_list.append(self._format_node(child, grandchildren))
+        return children_list
+
+    def get_subtree_dict(self, root):
+        root_node = self.get_queryset().get(pk=root)
+        return self._format_node(root_node, self._get_children(root_node))
 
     def get_tree_dict(self):
-        roots = self.get_queryset().filter(parent__isnull=True)
-        return [self.get_subtree_dict(root.pk) for root in roots]
+        return self._get_children(None)
 
 
 class Tree(models.Model):
